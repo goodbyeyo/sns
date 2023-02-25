@@ -14,8 +14,8 @@ public record MemberDto (
         return new MemberDto(
                 member.getId(),
                 member.getEmail(),
-                member.getNickName(),
-                member.getBirthDay()
+                member.getNickname(),
+                member.getBirthday()
         );
     }
 }

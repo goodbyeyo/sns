@@ -11,23 +11,28 @@ import java.util.Objects;
 @Getter
 public class Member {
     private final Long id;
-    private String nickName;
+    private String nickname;
     private final String email;
-    private final LocalDate birthDay;
+    private final LocalDate birthday;
     private final LocalDateTime createdAt;
     private static final Long NAME_MAX_LENGTH = 10L;
 
     @Builder
-    public Member(Long id, String nickName, String email, LocalDate birthDay, LocalDateTime createdAt) {
+    public Member(Long id, String nickname, String email, LocalDate birthday, LocalDateTime createdAt) {
         this.id = id;
-        this.nickName = Objects.requireNonNull(nickName);
+        this.nickname = Objects.requireNonNull(nickname);
         this.email = Objects.requireNonNull(email);
-        this.birthDay = Objects.requireNonNull(birthDay);
+        this.birthday = Objects.requireNonNull(birthday);
         this.createdAt = createdAt == null ? LocalDateTime.now() : createdAt;
     }
 
-    void validateNickName(String nickName) {
-        Assert.isTrue(nickName.length() <= NAME_MAX_LENGTH, "nickName must be less than 10 characters");
+    public void changeNickName(String changeName) {
+        Objects.requireNonNull(changeName);
+        validateNickName(changeName);
+        this.nickname = changeName;
+    }
 
+    private void validateNickName(String nickName) {
+        Assert.isTrue(nickName.length() <= NAME_MAX_LENGTH, "nickName must be less than 10 characters");
     }
 }

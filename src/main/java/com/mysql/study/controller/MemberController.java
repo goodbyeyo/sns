@@ -1,11 +1,14 @@
 package com.mysql.study.controller;
 
 import com.mysql.study.domain.member.dto.MemberDto;
+import com.mysql.study.domain.member.dto.MemberNicknameHistoryDto;
 import com.mysql.study.domain.member.dto.RegisterMemberCommand;
 import com.mysql.study.domain.member.service.MemberReadService;
 import com.mysql.study.domain.member.service.MemberWriteService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 /**
  * Presentation Layer 에 Domain Entity 를 노출시키는것은 좋지 않다.
@@ -32,19 +35,31 @@ import org.springframework.web.bind.annotation.*;
  */
 @RestController
 @RequiredArgsConstructor
+@RequestMapping("/members")
 public class MemberController {
 
     private final MemberWriteService memberWriteService;
     private final MemberReadService memberReadService;
 
-    @PostMapping("/members")
+    @PostMapping
     public MemberDto register(@RequestBody RegisterMemberCommand command) {
         var member = memberWriteService.register(command);
         return MemberDto.of(member);
     }
 
-    @GetMapping("/members/{id}")
+    @GetMapping("/{id}")
     public MemberDto getMember(@PathVariable Long id) {
         return memberReadService.getMember(id);
+    }
+
+    @PostMapping("/{id}/name")
+    public MemberDto changeNickName(@PathVariable Long id, @RequestBody String nickName) {
+        memberWriteService.changeNickName(id, nickName);
+        return memberReadService.getMember(id);
+    }
+
+    @GetMapping("/{memberId}/nickname-histories")
+    public List<MemberNicknameHistoryDto> getNicknameHistories(@PathVariable Long memberId) {
+        return memberReadService.getNicknameHistories(memberId);
     }
 }
