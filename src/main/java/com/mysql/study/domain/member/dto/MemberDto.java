@@ -1,6 +1,7 @@
 package com.mysql.study.domain.member.dto;
 
 import com.mysql.study.domain.member.entity.Member;
+import lombok.Getter;
 
 import java.time.LocalDate;
 

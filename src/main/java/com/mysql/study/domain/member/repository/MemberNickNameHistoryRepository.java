@@ -31,7 +31,7 @@ public class MemberNickNameHistoryRepository {
     private final NamedParameterJdbcTemplate namedJdbcTemplate;
     public static final String TABLE_NAME = "MemberNicknameHistory";
 
-    static final RowMapper<MemberNameHistory> rowMapper = (ResultSet resultSet, int rowNum) -> MemberNameHistory
+    static final RowMapper<MemberNameHistory> ROW_MAPPER = (ResultSet resultSet, int rowNum) -> MemberNameHistory
             .builder()
             .id(resultSet.getLong("id"))
             .memberId(resultSet.getLong("memberId"))
@@ -42,7 +42,7 @@ public class MemberNickNameHistoryRepository {
     public List<MemberNameHistory> findAllByMemberId(Long memberId) {
         var sql = String.format("SELECT * FROM %s WHERE memberId = :memberId", TABLE_NAME);
         var params = new MapSqlParameterSource().addValue("memberId", memberId);
-        return namedJdbcTemplate.query(sql, params, rowMapper);
+        return namedJdbcTemplate.query(sql, params, ROW_MAPPER);
 
     }
 
@@ -75,7 +75,7 @@ public class MemberNickNameHistoryRepository {
         var param = new MapSqlParameterSource()
                 .addValue("id", id);
 
-        var member = namedJdbcTemplate.queryForObject(sql, param, rowMapper);
+        var member = namedJdbcTemplate.queryForObject(sql, param, ROW_MAPPER);
         return Optional.ofNullable(member);
 
     }
