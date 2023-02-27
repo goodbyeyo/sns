@@ -6,8 +6,10 @@ import com.mysql.study.domain.post.dto.PostCommand;
 import com.mysql.study.domain.post.service.PostReadService;
 import com.mysql.study.domain.post.service.PostWriteService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RequiredArgsConstructor
@@ -24,7 +26,11 @@ public class PostController {
     }
 
     @GetMapping("/daily-post-counts")
-    public List<DailyPostCount> getDailyPostCount(@RequestBody DailyPostCountRequest request) {
+    public List<DailyPostCount> getDailyPostCount(
+            @RequestParam Long memberId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate firstDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate lastDate) {
+        var request = new DailyPostCountRequest(memberId, firstDate, lastDate);
         return postReadService.getDairyPostCount(request);
     }
 }
