@@ -1,11 +1,16 @@
 package com.mysql.study.domain.post.repository;
 
+import com.mysql.study.util.PageHelper;
 import com.mysql.study.domain.post.dto.DailyPostCount;
 import com.mysql.study.domain.post.dto.DailyPostCountRequest;
 import com.mysql.study.domain.post.entity.Post;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.BeanPropertySqlParameterSource;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
@@ -13,6 +18,7 @@ import org.springframework.stereotype.Repository;
 
 import java.sql.ResultSet;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RequiredArgsConstructor
@@ -25,6 +31,14 @@ public class PostRepository {
             rs.getLong("memberId"),
             rs.getObject("createdDate", LocalDate.class),
             rs.getLong("postCount")
+    );
+
+    private static final RowMapper<Post> ROW_MAPPER = (ResultSet rs, int rowNum) -> new Post(
+            rs.getLong("id"),
+            rs.getLong("memberId"),
+            rs.getString("contents"),
+            rs.getObject("createdDate", LocalDate.class),
+            rs.getObject("createdAt", LocalDateTime.class)
     );
 
     public Post save(Post post) {
@@ -57,8 +71,48 @@ public class PostRepository {
                 from %s
                 where memberId = :memberId and createdDate between :firstDate and :lastDate
                 group by memberId, createdDate
-                """,TABLE_NAME); // language=MySQL
+                """,TABLE_NAME);  // language=MySQL
         var params = new BeanPropertySqlParameterSource(request);
         return namedParameterJdbcTemplate.query(sql, params, DAILY_POST_COUNT_MAPPER);
+    }
+
+    public void bulkInsert(List<Post> posts) {
+        var sql = String.format("""
+                insert into `%s` (memberId, contents, createdDate, createdAt)
+                values (:memberId, :contents, :createdDate, :createdAt)
+                """, TABLE_NAME); // language=MySQL
+
+        SqlParameterSource[] params = posts.stream()
+                .map(BeanPropertySqlParameterSource::new)
+                .toArray(SqlParameterSource[]::new);
+
+        namedParameterJdbcTemplate.batchUpdate(sql, params);
+    }
+
+    public Page<Post> findAllByMemberId(Long memberId, Pageable pageable) {
+        var params = new MapSqlParameterSource()
+                .addValue("memberId", memberId)
+                .addValue("size", pageable.getPageSize())
+                .addValue("offset", pageable.getOffset());
+        var sql = String.format("""
+                select *
+                from %s
+                where memberId = :memberId
+                order by %s
+                limit :size offset :offset
+                """, TABLE_NAME, PageHelper.orderBy(pageable.getSort())); // language=MySQL
+
+        var posts = namedParameterJdbcTemplate.query(sql, params, ROW_MAPPER);
+        return new PageImpl<>(posts, pageable, getCount(memberId));
+    }
+
+    private Long getCount(Long memberId) {
+        var params = new MapSqlParameterSource().addValue("memberId", memberId);
+        var sql = String.format("""
+                select count(id) as count
+                from %s
+                where memberId = :memberId
+                """, TABLE_NAME); // language=MySQL
+        return namedParameterJdbcTemplate.queryForObject(sql, params, Long.class);
     }
 }

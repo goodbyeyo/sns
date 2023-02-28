@@ -3,9 +3,13 @@ package com.mysql.study.controller;
 import com.mysql.study.domain.post.dto.DailyPostCount;
 import com.mysql.study.domain.post.dto.DailyPostCountRequest;
 import com.mysql.study.domain.post.dto.PostCommand;
+import com.mysql.study.domain.post.entity.Post;
 import com.mysql.study.domain.post.service.PostReadService;
 import com.mysql.study.domain.post.service.PostWriteService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 
@@ -33,4 +37,16 @@ public class PostController {
         var request = new DailyPostCountRequest(memberId, firstDate, lastDate);
         return postReadService.getDairyPostCount(request);
     }
+
+    @PostMapping("/members/{memberId}")
+    public Page<Post> getPosts(
+            @PathVariable Long memberId,
+            Pageable pageable
+            // @RequestParam Integer page,
+            // @RequestParam Integer size
+    ){
+        return postReadService.getPosts(memberId, pageable);
+        // return postReadService.getPosts(memberId, PageRequest.of(page, size));
+    }
+
 }
