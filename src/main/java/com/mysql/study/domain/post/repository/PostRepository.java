@@ -94,6 +94,7 @@ public class PostRepository {
                 .addValue("memberId", memberId)
                 .addValue("size", pageable.getPageSize())
                 .addValue("offset", pageable.getOffset());
+
         var sql = String.format("""
                 select *
                 from %s
@@ -107,12 +108,48 @@ public class PostRepository {
     }
 
     private Long getCount(Long memberId) {
-        var params = new MapSqlParameterSource().addValue("memberId", memberId);
+        var params = new MapSqlParameterSource()
+                .addValue("memberId", memberId);
         var sql = String.format("""
                 select count(id) as count
                 from %s
                 where memberId = :memberId
                 """, TABLE_NAME); // language=MySQL
         return namedParameterJdbcTemplate.queryForObject(sql, params, Long.class);
+    }
+
+    public List<Post> findAllByMemberIdAndOrderByIdDesc(Long memberId, int size) {
+
+        var sql = String.format("""
+                select *
+                from %s
+                where memberId = :memberId
+                order by id desc
+                limit :size
+                """, TABLE_NAME); // language=MySQL
+
+        var params = new MapSqlParameterSource()
+                .addValue("memberId", memberId)
+                .addValue("size", size);
+
+        return namedParameterJdbcTemplate.query(sql, params, ROW_MAPPER);
+    }
+
+    public List<Post> findAllByLessThanIdAndMemberIdAndOrderByIdDesc(Long memberId, Long id, int size) {
+
+        var params = new MapSqlParameterSource()
+                .addValue("memberId", memberId)
+                .addValue("size", size)
+                .addValue("id", id);
+
+        var sql = String.format("""
+                select *
+                from %s
+                where memberId = :memberId and id < :id
+                order by id desc
+                limit :size
+                """, TABLE_NAME); // language=MySQL
+
+        return namedParameterJdbcTemplate.query(sql, params, ROW_MAPPER);
     }
 }
