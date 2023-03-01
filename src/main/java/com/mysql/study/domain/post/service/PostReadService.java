@@ -8,15 +8,10 @@ import com.mysql.study.util.CursorRequest;
 import com.mysql.study.util.PageCursor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
-import java.util.OptionalLong;
 
 @RequiredArgsConstructor
 @Service
@@ -30,26 +25,44 @@ public class PostReadService {
     }
 
     public Page<Post> getPosts(Long memberId, Pageable pageable) {
-    // public Page<Post> getPosts(Long memberId, PageRequest request) {
         return postRepository.findAllByMemberId(memberId, pageable);
     }
 
     public PageCursor<Post> getPosts(Long memberId, CursorRequest cursorRequest) {
 
-        var posts = findAllBy(memberId, cursorRequest);
+        var posts = findAllByMemberId(memberId, cursorRequest);
         // Optional<Long> min = posts.stream().map(Post::getId).min(Long::compareTo);
-        var nextKey = posts.stream()
-                .mapToLong(Post::getId)
-                .min()
-                .orElse(CursorRequest.NONE_KEY);
+        var nextKey = getNextKey(posts);
         return new PageCursor<>(cursorRequest.next(nextKey), posts);
     }
 
-    private List<Post> findAllBy(Long memberId, CursorRequest cursorRequest) {
+    private List<Post> findAllByMemberId(Long memberId, CursorRequest cursorRequest) {
         if (cursorRequest.hasNext()) {
-            return postRepository.findAllByLessThanIdAndMemberIdAndOrderByIdDesc(
+            return postRepository.findAllByLessThanIdAndInMemberIdAndOrderByIdDesc(
                     memberId, cursorRequest.key(), cursorRequest.size());
         }
-        return postRepository.findAllByMemberIdAndOrderByIdDesc(memberId, cursorRequest.size());
+        return postRepository.findAllByInMemberIdAndOrderByIdDesc(memberId, cursorRequest.size());
+    }
+
+    public PageCursor<Post> getPosts(List<Long> memberIds, CursorRequest cursorRequest) {
+        var posts = findAllByInMemberId(memberIds, cursorRequest);
+        // Optional<Long> min = posts.stream().map(Post::getId).min(Long::compareTo);
+        var nextKey = getNextKey(posts);
+        return new PageCursor<>(cursorRequest.next(nextKey), posts);
+    }
+
+    private List<Post> findAllByInMemberId(List<Long> memberIds, CursorRequest cursorRequest) {
+        if (cursorRequest.hasNext()) {
+            return postRepository.findAllByLessThanIdAndInMemberIdAndOrderByIdDesc(
+                    memberIds, cursorRequest.key(), cursorRequest.size());
+        }
+        return postRepository.findAllByInMemberIdAndOrderByIdDesc(memberIds, cursorRequest.size());
+    }
+
+    private long getNextKey(List<Post> posts) {
+        return posts.stream()
+                .mapToLong(Post::getId)
+                .min()
+                .orElse(CursorRequest.NONE_KEY);
     }
 }

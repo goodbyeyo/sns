@@ -1,5 +1,6 @@
 package com.mysql.study.controller;
 
+import com.mysql.study.application.facade.GetTimelinePostFacade;
 import com.mysql.study.domain.post.dto.DailyPostCount;
 import com.mysql.study.domain.post.dto.DailyPostCountRequest;
 import com.mysql.study.domain.post.dto.PostCommand;
@@ -10,7 +11,6 @@ import com.mysql.study.util.CursorRequest;
 import com.mysql.study.util.PageCursor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
@@ -25,6 +25,7 @@ public class PostController {
 
     private final PostWriteService postWriteService;
     private final PostReadService postReadService;
+    private final GetTimelinePostFacade getTimelinePostFacade;
 
     @PostMapping
     public Long create(PostCommand command) {
@@ -57,6 +58,14 @@ public class PostController {
             CursorRequest cursorRequest
     ){
         return postReadService.getPosts(memberId, cursorRequest);
+    }
+
+    @GetMapping("/members/{memberId}/timeline")
+    public PageCursor<Post> getTimeline(
+            @PathVariable Long memberId,
+            CursorRequest cursorRequest
+    ){
+        return getTimelinePostFacade.execute(memberId, cursorRequest);
     }
 
 
