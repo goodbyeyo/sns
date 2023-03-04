@@ -1,5 +1,6 @@
 package com.mysql.study.controller;
 
+import com.mysql.study.application.facade.CreatePostFacade;
 import com.mysql.study.application.facade.GetTimelinePostFacade;
 import com.mysql.study.domain.post.dto.DailyPostCount;
 import com.mysql.study.domain.post.dto.DailyPostCountRequest;
@@ -26,10 +27,12 @@ public class PostController {
     private final PostWriteService postWriteService;
     private final PostReadService postReadService;
     private final GetTimelinePostFacade getTimelinePostFacade;
+    private final CreatePostFacade createPostFacade;
 
     @PostMapping
     public Long create(PostCommand command) {
-        return postWriteService.create(command);
+        return createPostFacade.execute(command);
+        // return postWriteService.create(command);
     }
 
     @GetMapping("/daily-post-counts")
@@ -65,7 +68,7 @@ public class PostController {
             @PathVariable Long memberId,
             CursorRequest cursorRequest
     ){
-        return getTimelinePostFacade.execute(memberId, cursorRequest);
+        return getTimelinePostFacade.executeByTimeline(memberId, cursorRequest);
     }
 
 

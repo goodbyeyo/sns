@@ -13,6 +13,7 @@ import org.springframework.stereotype.Repository;
 
 import java.sql.ResultSet;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 
 @RequiredArgsConstructor
@@ -54,6 +55,12 @@ public class FollowRepository {
     public List<Follow> findAllFromMemberId(Long fromMemberId) {
         var sql = String.format("SELECT * FROM %s WHERE fromMemberId = :fromMemberId", TABLE_NAME);
         var params = new MapSqlParameterSource().addValue("fromMemberId", fromMemberId);
+        return namedParameterJdbcTemplate.query(sql, params, ROW_MAPPER);
+    }
+
+    public List<Follow> findAllToMemberId(Long toMemberId) {
+        var sql = String.format("SELECT * FROM %s WHERE toMemberId = :toMemberId", TABLE_NAME);
+        var params = new MapSqlParameterSource().addValue("toMemberId", toMemberId);
         return namedParameterJdbcTemplate.query(sql, params, ROW_MAPPER);
     }
 }

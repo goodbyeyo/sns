@@ -182,4 +182,19 @@ public class PostRepository {
                 """, TABLE_NAME); // language=MySQL
         return namedParameterJdbcTemplate.query(sql, params, ROW_MAPPER);
     }
+
+    public List<Post> findAllByInId(List<Long> ids) {
+        if (ids.isEmpty()) {
+            return List.of();
+        }
+        var params = new MapSqlParameterSource()
+                .addValue("ids", ids);
+
+        var sql = String.format("""
+                select *
+                from %s
+                where id in :ids
+                """, TABLE_NAME); // language=MySQL
+        return namedParameterJdbcTemplate.query(sql, params, ROW_MAPPER);
+    }
 }
