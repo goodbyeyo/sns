@@ -43,6 +43,8 @@ create table POST
     constraint POST_id_uindex
         primary key (id)
 );
+ alter table POST add column likeCount int;
+ alter table POST add column version int default 0;
 
 create index POST__index_member_id
     on POST (memberId);
@@ -62,5 +64,15 @@ create table Timeline
     constraint Timeline_id_uindex
         primary key (id)
 );
+
+ create table PostLike
+ (
+     id          int auto_increment,
+     memberId    int      not null,
+     postId      int      not null,
+     createdDate datetime not null,
+     constraint PostLike_id_uindex
+         primary key (id)
+ );
 
 

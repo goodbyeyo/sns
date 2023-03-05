@@ -1,10 +1,12 @@
 package com.mysql.study.domain.post.repository;
 
+import com.mysql.study.domain.member.entity.Member;
 import com.mysql.study.util.PageHelper;
 import com.mysql.study.domain.post.dto.DailyPostCount;
 import com.mysql.study.domain.post.dto.DailyPostCountRequest;
 import com.mysql.study.domain.post.entity.Post;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -20,6 +22,7 @@ import java.sql.ResultSet;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @RequiredArgsConstructor
 @Repository
@@ -33,13 +36,15 @@ public class PostRepository {
             rs.getLong("postCount")
     );
 
-    private static final RowMapper<Post> ROW_MAPPER = (ResultSet rs, int rowNum) -> new Post(
-            rs.getLong("id"),
-            rs.getLong("memberId"),
-            rs.getString("contents"),
-            rs.getObject("createdDate", LocalDate.class),
-            rs.getObject("createdAt", LocalDateTime.class)
-    );
+    private static final RowMapper<Post> ROW_MAPPER = (ResultSet rs, int rowNum) -> Post.builder()
+            .id(rs.getLong("id"))
+            .memberId(rs.getLong("memberId"))
+            .contents(rs.getString("contents"))
+            .createdDate(rs.getObject("createdDate", LocalDate.class))
+            .createdAt(rs.getObject("createdAt", LocalDateTime.class))
+            .likeCount(rs.getLong("likeCount"))
+            .version(rs.getLong("version"))
+            .build();
 
     public Post save(Post post) {
         if (post.getId() == null) {
@@ -196,5 +201,35 @@ public class PostRepository {
                 where id in :ids
                 """, TABLE_NAME); // language=MySQL
         return namedParameterJdbcTemplate.query(sql, params, ROW_MAPPER);
+    }
+
+    // 모든 조회에 잠금획득하면 성능저하가 발생하므로 필요한 경우에만 잠금획득
+    public Optional<Post> findById(Long postId, Boolean requiredLock) {
+        var sql = String.format("select * from %s where id = :postId", TABLE_NAME); // language=MySQL
+        if (requiredLock) {
+            sql += " for update";
+        }
+        var params = new MapSqlParameterSource().addValue("postId", postId);
+        var nullablePost = namedParameterJdbcTemplate.queryForObject(sql, params, ROW_MAPPER);
+        return Optional.ofNullable(nullablePost);
+    }
+
+    public Post update(Post post) {
+        var sql = String.format("""
+                UPDATE %s SET
+                    memberId = :memberId,
+                    contents = :contents,
+                    createdDate = :createdDate,
+                    likeCount = :likeCount,
+                    createdAt = :createdAt,
+                    version = version + 1
+                WHERE id = :id and version = :version
+                """, TABLE_NAME);
+        SqlParameterSource params = new BeanPropertySqlParameterSource(post);
+        var updateCount = namedParameterJdbcTemplate.update(sql, params);
+        if (updateCount == 0) {
+            throw new OptimisticLockingFailureException("Post update failed");
+        }
+        return post;
     }
 }

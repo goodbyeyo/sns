@@ -2,7 +2,9 @@ package com.mysql.study.domain.post.service;
 
 import com.mysql.study.domain.post.dto.DailyPostCount;
 import com.mysql.study.domain.post.dto.DailyPostCountRequest;
+import com.mysql.study.domain.post.dto.PostDto;
 import com.mysql.study.domain.post.entity.Post;
+import com.mysql.study.domain.post.repository.PostLikeRepository;
 import com.mysql.study.domain.post.repository.PostRepository;
 import com.mysql.study.util.CursorRequest;
 import com.mysql.study.util.PageCursor;
@@ -18,14 +20,25 @@ import java.util.List;
 public class PostReadService {
 
     private final PostRepository postRepository;
+    private final PostLikeRepository postLikeRepository;
 
     public List<DailyPostCount> getDairyPostCount(DailyPostCountRequest request) {
         // 작성일자, 작성회원, 작성 게시물 개수 조회
         return postRepository.groupByCreatedDate(request);
     }
 
-    public Page<Post> getPosts(Long memberId, Pageable pageable) {
-        return postRepository.findAllByMemberId(memberId, pageable);
+    public Page<PostDto> getPosts(Long memberId, Pageable pageable) {
+        return postRepository.findAllByMemberId(memberId, pageable)
+                .map(this::of); // Page<Post> -> Page<PostDto>
+    }
+
+    private PostDto of(Post post) {
+        return new PostDto(
+                post.getId(),
+                post.getContents(),
+                post.getCreatedAt(),
+                postLikeRepository.getCount(post.getId())
+        );
     }
 
     public PageCursor<Post> getPosts(Long memberId, CursorRequest cursorRequest) {
@@ -68,5 +81,9 @@ public class PostReadService {
 
     public List<Post> getPosts(List<Long> ids) {
         return postRepository.findAllByInId(ids);
+    }
+
+    public Post getPosts(Long postId) {
+        return postRepository.findById(postId, false).orElseThrow();
     }
 }

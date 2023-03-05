@@ -5,6 +5,7 @@ import com.mysql.study.application.facade.GetTimelinePostFacade;
 import com.mysql.study.domain.post.dto.DailyPostCount;
 import com.mysql.study.domain.post.dto.DailyPostCountRequest;
 import com.mysql.study.domain.post.dto.PostCommand;
+import com.mysql.study.domain.post.dto.PostDto;
 import com.mysql.study.domain.post.entity.Post;
 import com.mysql.study.domain.post.service.PostReadService;
 import com.mysql.study.domain.post.service.PostWriteService;
@@ -45,12 +46,12 @@ public class PostController {
     }
 
     @PostMapping("/members/{memberId}")
-    public Page<Post> getPosts(
+    public Page<PostDto> getPosts(
             @PathVariable Long memberId,
             Pageable pageable
             // @RequestParam Integer page,
             // @RequestParam Integer size
-    ){
+    ) {
         return postReadService.getPosts(memberId, pageable);
         // return postReadService.getPosts(memberId, PageRequest.of(page, size));
     }
@@ -59,7 +60,7 @@ public class PostController {
     public PageCursor<Post> getPostsByCursor(
             @PathVariable Long memberId,
             CursorRequest cursorRequest
-    ){
+    ) {
         return postReadService.getPosts(memberId, cursorRequest);
     }
 
@@ -67,10 +68,17 @@ public class PostController {
     public PageCursor<Post> getTimeline(
             @PathVariable Long memberId,
             CursorRequest cursorRequest
-    ){
+    ) {
         return getTimelinePostFacade.executeByTimeline(memberId, cursorRequest);
     }
 
+    @PostMapping("/{postId}/like/v1")
+    public void likePostV1(@PathVariable Long postId) {
+        postWriteService.likePostWithOptimisticLock(postId);
+    }
 
-
+    @PostMapping("/{postId}/like/v2")
+    public void likePostV2(@PathVariable Long postId) {
+        postWriteService.likePostWithOptimisticLock(postId);
+    }
 }
